@@ -150,7 +150,9 @@ def p_special_statement(p):
     if p[1] == 'twoWayModel':
         p[0] = ('two_way_model', p[3])
     elif p[1] == 'efects':
-        p[0] = ('efects', p[2], p[4])
+        from src.my_ast import SpecialDeclaration
+        p[0] = SpecialDeclaration(decl_type='efects', identifier=p[2], dimensions=p[4])
+
     else:  # racha
         p[0] = ('streak', p[3])
 
