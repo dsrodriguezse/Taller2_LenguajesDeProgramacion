@@ -1,0 +1,53 @@
+#Test 01
+
+float alpha;
+int n;
+int m;
+float beta(2);
+float tau(3);
+
+alpha = 0.5;
+n = 2;
+m = 3;
+beta[2] = [5.4,-9.2];
+tau[3] = [-7.4,1.2,0.58];
+
+twoWayModel modeloY[2,3,[3,2,4;1,3,2]];
+
+twoWayModel modeloY = [15.9,-4,66.1;-6.1,3.9;4.2,-1.3,12.4,5.8];[23.8;4.5,3.6,-0.5;2.2,-5.6];
+
+efectos efectosY[alpha,beta,tau];
+
+racha Y;
+
+Y = efectosY ~ modeloY;
+
+#Imprime la tabla tridimensional de datos de entrada
+print(Y.X);
+
+#Imprime la tabla tridimensional de rachas calculadas
+print(Y.R);
+
+#Imprimir todos los elementos de la celda 2_2 (se asume un índice desde 0)
+
+for k in range(1,Y.n_ij[1][1]):
+	print(Y.R[1][1][k]);
+
+#Notación alternativa de la misma operación
+
+print(Y.R[1][1].);
+
+#Imprimir la suma de todos los primeros elementos al cuadrado, más alpha
+
+float cuadrados = Y.alpha;
+for i in range(1,Y.N):
+	for j in range(1,Y.M):
+		cuadrados += (Y.R.[i][j][1])^2;
+print(cuadrados):
+
+#Notación alternativa
+print(Y.R..[1]^2 + Y.alpha);
+
+
+
+
