@@ -146,15 +146,19 @@ def p_block(p):
 def p_special_statement(p):
     '''special_statement : TWOWAYMODEL L_PARENTESIS expression R_PARENTESIS PUNTO_COMA
                         | EFECTS IDENTIFICADOR L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA
-                        | STREAK L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA'''
+                        | STREAK L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA
+                        | STREAK IDENTIFICADOR PUNTO_COMA'''  # 👈 nueva regla
     if p[1] == 'twoWayModel':
         p[0] = ('two_way_model', p[3])
     elif p[1] == 'efects':
         from src.my_ast import SpecialDeclaration
         p[0] = SpecialDeclaration(decl_type='efects', identifier=p[2], dimensions=p[4])
-
-    else:  # racha
+    elif p[1] == 'streak' and len(p) == 6:
         p[0] = ('streak', p[3])
+    elif p[1] == 'streak' and len(p) == 4:
+        from src.my_ast import SpecialDeclaration
+        p[0] = SpecialDeclaration(decl_type='streak', identifier=p[2], dimensions=None)
+
 
 def p_statement(p):
     '''statement : expression_statement
