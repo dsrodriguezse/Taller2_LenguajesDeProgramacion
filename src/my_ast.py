@@ -152,7 +152,7 @@ class MatrixDeclaration(ASTNode):
             self.data = dimensions_or_data
             self.rows = len(dimensions_or_data)
             self.cols = len(dimensions_or_data[0]) if self.rows > 0 else 0
-                    
+
 # ------------------------- Literales -------------------------
 class Literal(ASTNode):
     def __init__(self, value, type=None):
@@ -175,7 +175,10 @@ class StringLiteral(Literal):
 class BooleanLiteral(Literal):
     def __init__(self, value):
         super().__init__(value, 'bool')
-
+class MatrixLiteral(Literal):
+    def __init__(self, value):
+        super().__init__(value, 'matrix')
+                
 # ------------------------- Visitor Pattern -------------------------
 class ASTVisitor:
     def visit(self, node):

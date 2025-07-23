@@ -3,8 +3,8 @@ from src.lexer import tokens, lexer
 from src.my_ast import (
     Program, Declaration, MemberAccess, FunctionDeclaration, Parameter, Assignment,
     IfStatement, ElifBlock, WhileStatement, ForStatement, ForRangeStatement, ArrayAssignment,
-    BinaryOperation, UnaryOperation, FunctionCall, Identifier, MatrixDeclaration,
-    IntegerLiteral, FloatLiteral, StringLiteral, BooleanLiteral,ArrayDeclaration,SpecialDeclaration
+    BinaryOperation, UnaryOperation, FunctionCall, Identifier, MatrixDeclaration, MatrixLiteral,
+    IntegerLiteral, FloatLiteral, StringLiteral, BooleanLiteral,Literal,ArrayDeclaration,SpecialDeclaration
 )
 from math import sin, cos, tan, sinh, cosh, tanh  # Para funciones trigonométricas
 
@@ -180,17 +180,19 @@ def p_declaration_statement(p):
 
 def p_variable_declaration(p):
     '''variable_declaration : type_specifier IDENTIFICADOR OP_ASIGN expression PUNTO_COMA
-                           | type_specifier IDENTIFICADOR PUNTO_COMA
-                           | type_specifier IDENTIFICADOR L_PARENTESIS expression R_PARENTESIS PUNTO_COMA'''
-    if len(p) == 6 and p[3] == '=':
-        print(f"Declaración con asignación: {p[2]} de tipo {p[1]} = {p[4]}")
+                             | type_specifier IDENTIFICADOR PUNTO_COMA
+                             | type_specifier IDENTIFICADOR L_PARENTESIS expression R_PARENTESIS PUNTO_COMA
+                             | TWOWAYMODEL IDENTIFICADOR OP_ASIGN expression PUNTO_COMA'''
+    if len(p) == 6 and p[3] == '=' and p[1] != 'twoWayModel':
         p[0] = Declaration(p[1], p[2], p[4])
     elif len(p) == 4:
-        print(f"Declaración sin asignación: {p[2]} de tipo {p[1]}")
         p[0] = Declaration(p[1], p[2])
     elif len(p) == 7:
-        print(f"Declaración de array: {p[2]} de tipo {p[1]} con tamaño {p[4]}")
         p[0] = ArrayDeclaration(p[1], p[2], p[4])
+    elif p[1] == 'twoWayModel':
+        print(f"Declaración especial: {p[2]} = {p[4]}")
+        p[0] = Declaration('twoWayModel', p[2], p[4])
+
 
 
 def p_type_specifier(p):
@@ -302,13 +304,16 @@ def p_special_matrix_declaration(p):
             raise ValueError("Las dimensiones deben ser enteros")
             
         # Verificar que los datos coincidan con las dimensiones
-        data = p[4]['data']
+        data_node = p[4]['data']
+        data = data_node.value if isinstance(data_node, Literal) else data_node
+
         if len(data) != p[4]['rows']:
             raise ValueError(f"Número de filas incorrecto. Esperado: {p[4]['rows']}, Obtenido: {len(data)}")
-            
+
         for row in data:
             if len(row) != p[4]['cols']:
                 raise ValueError(f"Número de columnas incorrecto. Esperado: {p[4]['cols']}, Obtenido: {len(row)}")
+
         
         print(f"twoWayModel creado: {p[2]} con dimensiones {p[4]['rows']}x{p[4]['cols']}")
         p[0] = MatrixDeclaration(p[2], p[4])
@@ -323,11 +328,18 @@ def p_dimensions(p):
     rows = int(p[1].value) if hasattr(p[1], 'value') else int(p[1])
     cols = int(p[3].value) if hasattr(p[3], 'value') else int(p[3])
     
+    matrix = p[5]
+    if isinstance(matrix, MatrixLiteral):
+        matrix_data = matrix.value
+    else:
+        matrix_data = matrix  # fallback por si algo no fue procesado como MatrixLiteral
+
     p[0] = {
         'rows': rows,
         'cols': cols,
-        'data': p[5]
+        'data': matrix_data
     }
+
     print(f"Dimensiones procesadas: {rows} filas, {cols} columnas, datos: {p[5]}")
 
 def p_row_list(p):
@@ -437,7 +449,8 @@ def p_matrix_literal(p):
         processed_data.append(processed_row)
     
     print(f"Matriz literal procesada: {processed_data}")
-    p[0] = processed_data
+    p[0] = FloatLiteral(processed_data)  # o usa Literal(processed_data, 'matrix')
+
 
 def p_expression_list(p):
     '''expression_list : expression
