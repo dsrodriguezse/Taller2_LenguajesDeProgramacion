@@ -81,8 +81,8 @@ def p_assignment_statement(p):
     p[0] = Assignment(Identifier(p[1]), p[3])
 
 def p_array_assignment(p):
-    '''array_assignment : IDENTIFICADOR L_PARENTESIS expression R_PARENTESIS OP_ASIGN array_literal PUNTO_COMA
-                       | IDENTIFICADOR L_CORCHETE expression R_CORCHETE OP_ASIGN array_literal PUNTO_COMA'''
+    '''array_assignment : IDENTIFICADOR L_CORCHETE expression R_CORCHETE OP_ASIGN array_literal PUNTO_COMA'''
+    print(f"Asignando array: {p[1]}[{p[3]}] = {p[6]}")
     p[0] = ArrayAssignment(Identifier(p[1]), p[3], p[6])
 
 def p_statement_list(p):
@@ -180,11 +180,17 @@ def p_declaration_statement(p):
 
 def p_variable_declaration(p):
     '''variable_declaration : type_specifier IDENTIFICADOR OP_ASIGN expression PUNTO_COMA
-                           | type_specifier IDENTIFICADOR PUNTO_COMA'''
-    if len(p) == 6:
+                           | type_specifier IDENTIFICADOR PUNTO_COMA
+                           | type_specifier IDENTIFICADOR L_PARENTESIS expression R_PARENTESIS PUNTO_COMA'''
+    if len(p) == 6 and p[3] == '=':
+        print(f"Declaración con asignación: {p[2]} de tipo {p[1]} = {p[4]}")
         p[0] = Declaration(p[1], p[2], p[4])
-    else:
+    elif len(p) == 4:
+        print(f"Declaración sin asignación: {p[2]} de tipo {p[1]}")
         p[0] = Declaration(p[1], p[2])
+    elif len(p) == 7:
+        print(f"Declaración de array: {p[2]} de tipo {p[1]} con tamaño {p[4]}")
+        p[0] = ArrayDeclaration(p[1], p[2], p[4])
 
 
 def p_type_specifier(p):
@@ -289,22 +295,40 @@ def p_special_operation(p):
     p[0] = ('two_way_model', p[3])
 
 def p_special_matrix_declaration(p):
-    '''special_matrix_declaration : TWOWAYMODEL IDENTIFICADOR L_CORCHETE dimensions R_CORCHETE PUNTO_COMA
-                                 | TWOWAYMODEL IDENTIFICADOR OP_ASIGN matrix_literal PUNTO_COMA'''
-    if p[3] == '[':
+    '''special_matrix_declaration : TWOWAYMODEL IDENTIFICADOR L_CORCHETE dimensions R_CORCHETE PUNTO_COMA'''
+    try:
+        # Verificar que las dimensiones sean correctas
+        if not isinstance(p[4]['rows'], int) or not isinstance(p[4]['cols'], int):
+            raise ValueError("Las dimensiones deben ser enteros")
+            
+        # Verificar que los datos coincidan con las dimensiones
+        data = p[4]['data']
+        if len(data) != p[4]['rows']:
+            raise ValueError(f"Número de filas incorrecto. Esperado: {p[4]['rows']}, Obtenido: {len(data)}")
+            
+        for row in data:
+            if len(row) != p[4]['cols']:
+                raise ValueError(f"Número de columnas incorrecto. Esperado: {p[4]['cols']}, Obtenido: {len(row)}")
+        
+        print(f"twoWayModel creado: {p[2]} con dimensiones {p[4]['rows']}x{p[4]['cols']}")
         p[0] = MatrixDeclaration(p[2], p[4])
-    else:
-        p[0] = MatrixDeclaration(p[2], p[4])
+        
+    except ValueError as e:
+        print(f"Error en twoWayModel: {str(e)}")
+        p_error(p)
 
 def p_dimensions(p):
     '''dimensions : expression COMA expression COMA matrix_literal'''
+    # Asegurarse de que las dimensiones sean valores numéricos
+    rows = int(p[1].value) if hasattr(p[1], 'value') else int(p[1])
+    cols = int(p[3].value) if hasattr(p[3], 'value') else int(p[3])
+    
     p[0] = {
-        'rows': p[1],
-        'cols': p[3],
+        'rows': rows,
+        'cols': cols,
         'data': p[5]
     }
-
-    p[0] = p[2]
+    print(f"Dimensiones procesadas: {rows} filas, {cols} columnas, datos: {p[5]}")
 
 def p_row_list(p):
     '''row_list : row
@@ -400,9 +424,20 @@ def p_array_literal(p):
 
 # Conserva solo UNA de estas definiciones (la más completa)
 def p_matrix_literal(p):
-    '''matrix_literal : L_CORCHETE row_list R_CORCHETE
-                     | L_CORCHETE expression_list R_CORCHETE'''
-    p[0] = p[2]
+    '''matrix_literal : L_CORCHETE row_list R_CORCHETE'''
+    # Convertir las expresiones a valores numéricos
+    processed_data = []
+    for row in p[2]:
+        processed_row = []
+        for item in row:
+            if hasattr(item, 'value'):
+                processed_row.append(item.value)
+            else:
+                processed_row.append(item)
+        processed_data.append(processed_row)
+    
+    print(f"Matriz literal procesada: {processed_data}")
+    p[0] = processed_data
 
 def p_expression_list(p):
     '''expression_list : expression
@@ -430,9 +465,11 @@ def p_member_access(p):
 
 def p_error(p):
     if p:
-        print(f"Error de sintaxis en '{p.value}' (línea {p.lineno})")
+        if p.type == 'TWOWAYMODEL':
+            print(f"Error de sintaxis en twoWayModel en línea {p.lineno}. Verifique las dimensiones y los datos.")
+        else:
+            print(f"Error de sintaxis en '{p.value}' (línea {p.lineno})")
     else:
         print("Error de sintaxis: fin de archivo inesperado")
-
 # Construir el parser
 parser = yacc.yacc(debug=False, write_tables=False)
