@@ -145,12 +145,12 @@ def p_block(p):
 
 def p_special_statement(p):
     '''special_statement : TWOWAYMODEL L_PARENTESIS expression R_PARENTESIS PUNTO_COMA
-                        | EFECTS L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA
+                        | EFECTS IDENTIFICADOR L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA
                         | STREAK L_PARENTESIS argument_list R_PARENTESIS PUNTO_COMA'''
     if p[1] == 'twoWayModel':
         p[0] = ('two_way_model', p[3])
     elif p[1] == 'efects':
-        p[0] = ('efects', p[3])
+        p[0] = ('efects', p[2], p[4])
     else:  # racha
         p[0] = ('streak', p[3])
 
